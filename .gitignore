@@ -1,4 +1,5 @@
 .vscode
+.history
 *.o
 mylang2ir
 *.my

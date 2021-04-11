@@ -6,7 +6,7 @@ using namespace std;
 FileIO::FileIO(const char* rawName) {
     inFile = string(rawName);
     if (this->inFile.substr(this->inFile.find_last_of('.')) != ".my")
-        throw "Invalid Filename";
+        throw InvalidExt();
     this->outFile =
         this->inFile.substr(0, this->inFile.find_last_of('.')) +
         ".ll";

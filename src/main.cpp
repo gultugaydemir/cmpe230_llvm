@@ -18,8 +18,12 @@ int main(int argc, char* argv[]) {
         Generator gen = Generator(io.readFile());
         io.writeFile(gen.get_code());
 
-    } catch (const char* msg) {
-        cerr << "Uncaptured error:\n" << msg << endl;
+    } catch (const exception& e) {
+        // Write the type of exception, then description.
+        // Must be updated before submitting the assignment.
+        exception_ptr p = make_exception_ptr(e);
+        cerr << (p ? p.__cxa_exception_type()->name() : "null") << endl
+             << e.what() << endl;
     }
 
     return 0;
