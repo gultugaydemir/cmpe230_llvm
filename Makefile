@@ -4,11 +4,11 @@ mylang2ir:		main.o fileio.o generator.o
 				g++ ${FLAGS} fileio.o generator.o main.o -o mylang2ir
 				@echo "Completed."
 
-main.o:			main.cpp generator.h fileio.h
-				g++ ${FLAGS} -c main.cpp
+main.o:			src/main.cpp include/generator.h include/fileio.h
+				g++ ${FLAGS} -c src/main.cpp
 
-fileio.o:		fileio.cpp fileio.h
-				g++ ${FLAGS} -c fileio.cpp
+fileio.o:		src/fileio.cpp include/fileio.h
+				g++ ${FLAGS} -c src/fileio.cpp
 
-generator.o:	generator.cpp generator.h
-				g++ ${FLAGS} -c generator.cpp
+generator.o:	src/generator.cpp include/generator.h
+				g++ ${FLAGS} -c src/generator.cpp

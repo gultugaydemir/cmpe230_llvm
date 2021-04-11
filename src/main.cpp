@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "fileio.h"
-#include "generator.h"
+#include "../include/fileio.h"
+#include "../include/generator.h"
 using namespace std;
 
 int main(int argc, char* argv[]) {
