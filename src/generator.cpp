@@ -9,8 +9,8 @@ Generator::Generator() {
 
 string Generator::get_code() {
     // Safe return the result.
-    return this->beg_code + this->init_args + zero_args + this->gen_code +
-           this->end_code;
+    return this->beg_code + this->choose_func + this->st_code +
+           this->init_args + zero_args + this->gen_code + this->end_code;
 }
 
 void Generator::add_init(string text) {

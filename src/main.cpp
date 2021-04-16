@@ -110,6 +110,8 @@ map<char, int> oprPrec = {
 
 enum endChar { newline = '\n', paran = ')', comma = ',' };
 
+vector<Expr *> parseArgs(const char *text, int argNum);
+
 Expr *parseExpr(const char *text, endChar endExpr = newline) {
     // The first part should always be on leaves.
     cerr << "Im here\n";
@@ -128,6 +130,9 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
         case num:
             top = new NumExpr(cur_str);
             break;
+        case _choose:
+            top = new FuncExpr("choose", parseArgs(text, 4));
+            break;
         /*case asg:
             return new AsgExpr(cur_str, parseExpr(text, endExpr));*/
         default:
@@ -138,7 +143,7 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
     se_tok = lex_tok(text);
     cerr << se_tok << endl;
     if (oprPrec.find(se_tok) == oprPrec.end()) {
-        if (se_tok == endExpr || (endExpr == newline && se_tok == eof)) {
+        if ((se_tok == endExpr) || (endExpr == newline && se_tok == eof)) {
             return top;
         }
         cerr << "3-1: " << (char)fi_tok << endl;
@@ -174,6 +179,9 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
             case num:
                 part = new NumExpr(cur_str);
                 break;
+            case _choose:
+                part = new FuncExpr("choose", parseArgs(text, 4));
+                break;
             default:
                 cerr << "2: " << fi_tok << endl;
                 throw InvalidExpr();  // Invalid Expression
@@ -196,6 +204,7 @@ vector<Expr *> parseArgs(const char *text, int argNum) {
         argNum--;
     }
     if (argNum == 1) res.push_back(parseExpr(text, paran));
+    cerr << "Returning\n" << res.size() << " "<< pos << endl;
     return res;
 }
 
@@ -261,9 +270,8 @@ void runWhile(Expr *tgt, string &text, Generator &gen) {
 }
 
 void runIf(Expr *tgt, string &text, Generator &gen) {
-    string ifName[] = {"ifcond" + to_string(ifNum),
-                          "ifbody" + to_string(ifNum),
-                          "ifend" + to_string(ifNum)};
+    string ifName[] = {"ifcond" + to_string(ifNum), "ifbody" + to_string(ifNum),
+                       "ifend" + to_string(ifNum)};
     ifNum++;
     string cmpTemp = Expr::tempNameRequest();
 

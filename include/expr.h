@@ -18,9 +18,7 @@ class Expr {
     Expr();
     Expr(string tempName);
     string tempNameGet() const;
-    static string tempNameRequest(){
-        return "%tmp" + to_string(tempIdNum++);
-    }
+    static string tempNameRequest() { return "%tmp" + to_string(tempIdNum++); }
     virtual void setRight(Expr *ri);
     virtual string codeGen() = 0;
     virtual void debug() = 0;
@@ -82,7 +80,6 @@ class OprExpr : public Expr {
         le->debug();
         cerr << "ri-> ";
         ri->debug();
-
     }
     OprExpr(char op, Expr *le, Expr *ri) : op(op), le(le), ri(ri) {}
     OprExpr(char op, Expr *le) : op(op), le(le) {}
@@ -93,6 +90,26 @@ class OprExpr : public Expr {
         right = ri->codeGen();
         return left + right + tempNameGet() + " = " + oprName[op] + " i32 " +
                le->tempNameGet() + ", " + ri->tempNameGet() + '\n';
+    }
+};
+
+class FuncExpr : public Expr {
+   private:
+    vector<Expr *> args;
+    string funcname;
+
+   public:
+    void debug() { cerr << "ChooseFunc\n"; }
+    FuncExpr(string funcname, vector<Expr *> args) : args(args), funcname(funcname) {}
+    virtual string codeGen(){
+        string str_args = "";
+        for(int i=0; i<args.size(); i++){
+            str_args+=args[i]->tempNameGet();
+            if((i+1)<args.size()){
+                str_args+=", ";
+            }
+        }
+        return tempNameGet()+" = call i32 @"+funcname+'('+str_args+")\n";
     }
 };
 
@@ -113,4 +130,5 @@ class AsgExpr : public VarExpr {
                ", i32* " + varNameGet() + '\n';
     }
 };
+
 #endif
