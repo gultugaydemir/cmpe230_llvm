@@ -224,11 +224,13 @@ void runWhile(Expr *tgt, string &text, Generator &gen) {
     whileNum++;
     string cmpTemp = Expr::tempNameRequest();
 
+    gen.add_code("br label %"+whileName[0]+"\n"+whileName[0] + ":\n");
+
     gen.add_code(tgt->codeGen());
 
-    gen.add_code(whileName[0] + ":\n" + cmpTemp + " = icmp ne i32 " +
-                 tgt->tempNameGet() + ", 0\nbr i1 " + tgt->tempNameGet() +
-                 ", label " + whileName[1] + ", label " + whileName[2] + '\n' +
+    gen.add_code(cmpTemp + " = icmp ne i32 " +
+                 tgt->tempNameGet() + ", 0\nbr i1 " + cmpTemp +
+                 ", label %" + whileName[1] + ", label %" + whileName[2] + '\n' +
                  whileName[1] + ":\n");
     cerr << "While parsed";
     linenum++;
@@ -266,7 +268,7 @@ void runWhile(Expr *tgt, string &text, Generator &gen) {
         linenum++;
     }
 
-    gen.add_code("br label " + whileName[0] + '\n' + whileName[2] + ":\n");
+    gen.add_code("br label %" + whileName[0] + '\n' + whileName[2] + ":\n");
 }
 
 void runIf(Expr *tgt, string &text, Generator &gen) {
@@ -275,11 +277,13 @@ void runIf(Expr *tgt, string &text, Generator &gen) {
     ifNum++;
     string cmpTemp = Expr::tempNameRequest();
 
+    gen.add_code("br label %"+ifName[0]+"\n"+ifName[0] + ":\n");
+
     gen.add_code(tgt->codeGen());
 
-    gen.add_code(ifName[0] + ":\n" + cmpTemp + " = icmp ne i32 " +
-                 tgt->tempNameGet() + ", 0\nbr i1 " + tgt->tempNameGet() +
-                 ", label " + ifName[1] + ", label " + ifName[2] + '\n' +
+    gen.add_code(cmpTemp + " = icmp ne i32 " +
+                 tgt->tempNameGet() + ", 0\nbr i1 " + cmpTemp +
+                 ", label %" + ifName[1] + ", label %" + ifName[2] + '\n' +
                  ifName[1] + ":\n");
     cerr << "If parsed";
     linenum++;
@@ -317,7 +321,7 @@ void runIf(Expr *tgt, string &text, Generator &gen) {
         linenum++;
     }
 
-    gen.add_code(ifName[2] + ":\n");
+    gen.add_code("br label %" + ifName[2] + '\n' + ifName[2] + ":\n");
 }
 
 int main(int argc, char *argv[]) {

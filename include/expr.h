@@ -102,14 +102,15 @@ class FuncExpr : public Expr {
     void debug() { cerr << "ChooseFunc\n"; }
     FuncExpr(string funcname, vector<Expr *> args) : args(args), funcname(funcname) {}
     virtual string codeGen(){
-        string str_args = "";
+        string str_args = "", pre_code="";
         for(int i=0; i<args.size(); i++){
-            str_args+=args[i]->tempNameGet();
+            str_args+="i32 "+args[i]->tempNameGet();
+            pre_code+=args[i]->codeGen();
             if((i+1)<args.size()){
                 str_args+=", ";
             }
         }
-        return tempNameGet()+" = call i32 @"+funcname+'('+str_args+")\n";
+        return pre_code+tempNameGet()+" = call i32 @"+funcname+'('+str_args+")\n";
     }
 };
 
