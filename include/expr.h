@@ -18,6 +18,9 @@ class Expr {
     Expr();
     Expr(string tempName);
     string tempNameGet() const;
+    static string tempNameRequest(){
+        return "%tmp" + to_string(tempIdNum++);
+    }
     virtual void setRight(Expr *ri);
     virtual string codeGen() = 0;
     virtual void debug() = 0;

@@ -71,12 +71,8 @@ int lex_tok(const char *text) {
         // Whitespace would be cleared on next lexer call anyway.
         while (isspace(text[pos]) && text[pos] != '\n' && text[pos] != '\0')
             pos++;
-        if (text[pos] == '\0') {
-            return eof;
-        }
-        if (text[pos] == '\n') {
-            pos++;
-            return '\n';
+        if (text[pos] == '\0' || text[pos] == '\n') {
+            return var;
         }
 
         // If predefined definition-function, return type.
@@ -132,8 +128,8 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
         case num:
             top = new NumExpr(cur_str);
             break;
-        case asg:
-            return new AsgExpr(cur_str, parseExpr(text, endExpr));
+        /*case asg:
+            return new AsgExpr(cur_str, parseExpr(text, endExpr));*/
         default:
             cerr << "1: " << fi_tok << endl;
             throw InvalidExpr();  // Invalid Expression
@@ -142,7 +138,7 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
     se_tok = lex_tok(text);
     cerr << se_tok << endl;
     if (oprPrec.find(se_tok) == oprPrec.end()) {
-        if (se_tok == endExpr) {
+        if (se_tok == endExpr || (endExpr == newline && se_tok == eof)) {
             return top;
         }
         cerr << "3-1: " << (char)fi_tok << endl;
@@ -154,7 +150,7 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
         cur_prec = oprPrec[se_tok];
         if (cur_prec < last_prec) {
             cerr << "low\n";
-            //cur->debug();
+            // cur->debug();
             cur->setRight(part);
             top = new OprExpr(se_tok, top);
             cur = top;
@@ -167,6 +163,7 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
         fi_tok = lex_tok(text);
         cur_str = lex_str;
         cerr << "cur_str: " << cur_str << endl;
+        cerr << "fi_tok: " << fi_tok << endl;
         switch (fi_tok) {
             case '(':
                 part = parseExpr(text, paran);
@@ -185,7 +182,7 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
         cerr << "se_tok: " << se_tok << endl;
     }
     cur->setRight(part);
-    if (se_tok == endExpr) {
+    if (se_tok == endExpr || (endExpr == newline && se_tok == eof)) {
         return top;
     }
     cerr << "3: " << (char)fi_tok << endl;
@@ -205,7 +202,114 @@ vector<Expr *> parseArgs(const char *text, int argNum) {
 string generatePrint(Expr *tgt) {
     return "call i32 (i8*, ...)* @printf(i8* getelementptr ([4 x i8]* "
            "@print.str, i32 0, i32 0), i32 " +
-           tgt->tempNameGet() + " )";
+           tgt->tempNameGet() + " )\n";
+}
+
+int whileNum = 1;
+int ifNum = 1;
+
+void runWhile(Expr *tgt, string &text, Generator &gen) {
+    string whileName[] = {"whcond" + to_string(whileNum),
+                          "whbody" + to_string(whileNum),
+                          "whend" + to_string(whileNum)};
+    whileNum++;
+    string cmpTemp = Expr::tempNameRequest();
+
+    gen.add_code(tgt->codeGen());
+
+    gen.add_code(whileName[0] + ":\n" + cmpTemp + " = icmp ne i32 " +
+                 tgt->tempNameGet() + ", 0\nbr i1 " + tgt->tempNameGet() +
+                 ", label " + whileName[1] + ", label " + whileName[2] + '\n' +
+                 whileName[1] + ":\n");
+    cerr << "While parsed";
+    linenum++;
+    int tok = lex_tok(text.c_str());
+    string cur_str = lex_str;
+    Expr *exprPtr;
+    while (tok != '}') {
+        // cerr << "tok: " << tok << endl;
+        cerr << "str: " << text[pos] << text[pos + 1] << text[pos + 2] << endl;
+        switch (tok) {
+            case asg:
+                exprPtr = new AsgExpr(cur_str, parseExpr(text.c_str()));
+                cerr << "pos: " << pos << endl;
+                cerr << "Hello\n";
+                // exprPtr->debug();
+                gen.add_code(exprPtr->codeGen());
+                break;
+            case _print:
+                exprPtr = parseArgs(text.c_str(), 1)[0];
+                gen.add_code(exprPtr->codeGen());
+                gen.add_code(generatePrint(exprPtr));
+                break;
+            case '\n':
+                break;
+            default:
+                cerr << "def: " << tok << endl;
+                throw InvalidExpr();  // Invalid Expression
+        }
+        cerr << "ok-while: " << linenum << ": " << tok << ": " << pos << endl;
+        tok = lex_tok(text.c_str());
+        if (tok == eof) {
+            throw InvalidExpr();  // Invalid Expression
+        }
+        cur_str = lex_str;
+        linenum++;
+    }
+
+    gen.add_code("br label " + whileName[0] + '\n' + whileName[2] + ":\n");
+}
+
+void runIf(Expr *tgt, string &text, Generator &gen) {
+    string ifName[] = {"ifcond" + to_string(ifNum),
+                          "ifbody" + to_string(ifNum),
+                          "ifend" + to_string(ifNum)};
+    ifNum++;
+    string cmpTemp = Expr::tempNameRequest();
+
+    gen.add_code(tgt->codeGen());
+
+    gen.add_code(ifName[0] + ":\n" + cmpTemp + " = icmp ne i32 " +
+                 tgt->tempNameGet() + ", 0\nbr i1 " + tgt->tempNameGet() +
+                 ", label " + ifName[1] + ", label " + ifName[2] + '\n' +
+                 ifName[1] + ":\n");
+    cerr << "If parsed";
+    linenum++;
+    int tok = lex_tok(text.c_str());
+    string cur_str = lex_str;
+    Expr *exprPtr;
+    while (tok != '}') {
+        // cerr << "tok: " << tok << endl;
+        cerr << "str: " << text[pos] << text[pos + 1] << text[pos + 2] << endl;
+        switch (tok) {
+            case asg:
+                exprPtr = new AsgExpr(cur_str, parseExpr(text.c_str()));
+                cerr << "pos: " << pos << endl;
+                cerr << "Hello\n";
+                // exprPtr->debug();
+                gen.add_code(exprPtr->codeGen());
+                break;
+            case _print:
+                exprPtr = parseArgs(text.c_str(), 1)[0];
+                gen.add_code(exprPtr->codeGen());
+                gen.add_code(generatePrint(exprPtr));
+                break;
+            case '\n':
+                break;
+            default:
+                cerr << "def: " << tok << endl;
+                throw InvalidExpr();  // Invalid Expression
+        }
+        cerr << "ok-if: " << linenum << ": " << tok << ": " << pos << endl;
+        tok = lex_tok(text.c_str());
+        if (tok == eof) {
+            throw InvalidExpr();  // Invalid Expression
+        }
+        cur_str = lex_str;
+        linenum++;
+    }
+
+    gen.add_code(ifName[2] + ":\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -217,13 +321,13 @@ int main(int argc, char *argv[]) {
     }
 
     try {
-        Expr *exprPtr;
         FileIO io(argv[1]);
 
         string text = io.readFile() + "\0";
         Generator gen = Generator();
         int tok = lex_tok(text.c_str());
         string cur_str = lex_str;
+        Expr *exprPtr;
         while (tok != eof) {
             // cerr << "tok: " << tok << endl;
             cerr << "str: " << text[pos] << text[pos + 1] << text[pos + 2]
@@ -233,7 +337,7 @@ int main(int argc, char *argv[]) {
                     exprPtr = new AsgExpr(cur_str, parseExpr(text.c_str()));
                     cerr << "pos: " << pos << endl;
                     cerr << "Hello\n";
-                    //exprPtr->debug();
+                    // exprPtr->debug();
                     gen.add_code(exprPtr->codeGen());
                     break;
                 case _print:
@@ -241,6 +345,34 @@ int main(int argc, char *argv[]) {
                     gen.add_code(exprPtr->codeGen());
                     gen.add_code(generatePrint(exprPtr));
                     break;
+                case _while:
+                    exprPtr = parseArgs(text.c_str(), 1)[0];
+                    if (lex_tok(text.c_str()) != '{') {
+                        cerr << '{';
+                        throw InvalidExpr();  // Invalid Expression
+                    }
+                    if (lex_tok(text.c_str()) != '\n') {
+                        cerr << 'n';
+                        throw InvalidExpr();  // Invalid Expression
+                    }
+                    cerr << "success";
+                    runWhile(exprPtr, text, gen);
+                    break;
+
+                case _if:
+                    exprPtr = parseArgs(text.c_str(), 1)[0];
+                    if (lex_tok(text.c_str()) != '{') {
+                        cerr << '{';
+                        throw InvalidExpr();  // Invalid Expression
+                    }
+                    if (lex_tok(text.c_str()) != '\n') {
+                        cerr << 'n';
+                        throw InvalidExpr();  // Invalid Expression
+                    }
+                    cerr << "success";
+                    runIf(exprPtr, text, gen);
+                    break;
+
                 case '\n':
                     break;
                 default:
@@ -251,9 +383,6 @@ int main(int argc, char *argv[]) {
             tok = lex_tok(text.c_str());
             cur_str = lex_str;
             linenum++;
-            if (linenum > 10) {
-                throw("Error");
-            }
         }
         cerr << "ok" << endl;
         for (auto it : VarExpr::getVarList()) {
