@@ -15,7 +15,6 @@ map<string, unsigned int> VarExpr::varMap;
 Expr::Expr() : tempName("%tmp" + to_string(tempIdNum++)) {}
 Expr::Expr(string tempName) : tempName(tempName) {}
 string Expr::tempNameGet() const { return tempName; }
-void Expr::setRight(Expr *ri) {}
 
 VarExpr::VarExpr(string name) : name(name) {
     constructor();

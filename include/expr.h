@@ -19,7 +19,8 @@ class Expr {
     Expr(string tempName);
     string tempNameGet() const;
     static string tempNameRequest() { return "%tmp" + to_string(tempIdNum++); }
-    virtual void setRight(Expr *ri);
+    virtual void setRight(Expr *ri){}
+    virtual void pushLeft(char op, Expr *var){}
     virtual string codeGen() = 0;
     virtual void debug() = 0;
     // virtual ~Expr(){}
@@ -71,7 +72,7 @@ class VarExpr : public Expr {
 class OprExpr : public Expr {
    private:
     char op;
-    Expr *le, *ri;
+    Expr *le = NULL, *ri = NULL;
 
    public:
     void debug() {
@@ -84,6 +85,12 @@ class OprExpr : public Expr {
     OprExpr(char op, Expr *le, Expr *ri) : op(op), le(le), ri(ri) {}
     OprExpr(char op, Expr *le) : op(op), le(le) {}
     virtual void setRight(Expr *ri) { this->ri = ri; }
+    virtual void pushLeft(char op, Expr *var) { 
+        OprExpr* temp = new OprExpr(this->op, this->le, this->ri);
+        temp->ri = var;
+        this->le = temp;
+        this->op = op;
+    }
     virtual string codeGen() {
         string left, right;
         left = le->codeGen();
@@ -100,17 +107,19 @@ class FuncExpr : public Expr {
 
    public:
     void debug() { cerr << "ChooseFunc\n"; }
-    FuncExpr(string funcname, vector<Expr *> args) : args(args), funcname(funcname) {}
-    virtual string codeGen(){
-        string str_args = "", pre_code="";
-        for(int i=0; i<args.size(); i++){
-            str_args+="i32 "+args[i]->tempNameGet();
-            pre_code+=args[i]->codeGen();
-            if((i+1)<args.size()){
-                str_args+=", ";
+    FuncExpr(string funcname, vector<Expr *> args)
+        : args(args), funcname(funcname) {}
+    virtual string codeGen() {
+        string str_args = "", pre_code = "";
+        for (int i = 0; i < args.size(); i++) {
+            str_args += "i32 " + args[i]->tempNameGet();
+            pre_code += args[i]->codeGen();
+            if ((i + 1) < args.size()) {
+                str_args += ", ";
             }
         }
-        return pre_code+tempNameGet()+" = call i32 @"+funcname+'('+str_args+")\n";
+        return pre_code + tempNameGet() + " = call i32 @" + funcname + '(' +
+               str_args + ")\n";
     }
 };
 

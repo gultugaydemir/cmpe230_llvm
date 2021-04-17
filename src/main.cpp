@@ -159,6 +159,9 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
             cur->setRight(part);
             top = new OprExpr(se_tok, top);
             cur = top;
+        } else if (cur_prec == last_prec) {
+            cerr << "medium\n";
+            cur->pushLeft(se_tok, part);
         } else {
             cerr << "high\n";
             temp = new OprExpr(se_tok, part);
@@ -204,7 +207,7 @@ vector<Expr *> parseArgs(const char *text, int argNum) {
         argNum--;
     }
     if (argNum == 1) res.push_back(parseExpr(text, paran));
-    cerr << "Returning\n" << res.size() << " "<< pos << endl;
+    cerr << "Returning\n" << res.size() << " " << pos << endl;
     return res;
 }
 
@@ -224,14 +227,13 @@ void runWhile(Expr *tgt, string &text, Generator &gen) {
     whileNum++;
     string cmpTemp = Expr::tempNameRequest();
 
-    gen.add_code("br label %"+whileName[0]+"\n"+whileName[0] + ":\n");
+    gen.add_code("br label %" + whileName[0] + "\n" + whileName[0] + ":\n");
 
     gen.add_code(tgt->codeGen());
 
-    gen.add_code(cmpTemp + " = icmp ne i32 " +
-                 tgt->tempNameGet() + ", 0\nbr i1 " + cmpTemp +
-                 ", label %" + whileName[1] + ", label %" + whileName[2] + '\n' +
-                 whileName[1] + ":\n");
+    gen.add_code(cmpTemp + " = icmp ne i32 " + tgt->tempNameGet() +
+                 ", 0\nbr i1 " + cmpTemp + ", label %" + whileName[1] +
+                 ", label %" + whileName[2] + '\n' + whileName[1] + ":\n");
     cerr << "While parsed";
     linenum++;
     int tok = lex_tok(text.c_str());
@@ -277,14 +279,13 @@ void runIf(Expr *tgt, string &text, Generator &gen) {
     ifNum++;
     string cmpTemp = Expr::tempNameRequest();
 
-    gen.add_code("br label %"+ifName[0]+"\n"+ifName[0] + ":\n");
+    gen.add_code("br label %" + ifName[0] + "\n" + ifName[0] + ":\n");
 
     gen.add_code(tgt->codeGen());
 
-    gen.add_code(cmpTemp + " = icmp ne i32 " +
-                 tgt->tempNameGet() + ", 0\nbr i1 " + cmpTemp +
-                 ", label %" + ifName[1] + ", label %" + ifName[2] + '\n' +
-                 ifName[1] + ":\n");
+    gen.add_code(cmpTemp + " = icmp ne i32 " + tgt->tempNameGet() +
+                 ", 0\nbr i1 " + cmpTemp + ", label %" + ifName[1] +
+                 ", label %" + ifName[2] + '\n' + ifName[1] + ":\n");
     cerr << "If parsed";
     linenum++;
     int tok = lex_tok(text.c_str());
