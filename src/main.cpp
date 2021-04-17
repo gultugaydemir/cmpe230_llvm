@@ -71,20 +71,25 @@ int lex_tok(const char *text) {
         // Whitespace would be cleared on next lexer call anyway.
         while (isspace(text[pos]) && text[pos] != '\n' && text[pos] != '\0')
             pos++;
-        if (text[pos] == '\0' || text[pos] == '\n') {
-            return var;
-        }
 
         // If predefined definition-function, return type.
-        if (text[pos] == '(') {
-            pos++;
-            if (lex_str == "if") return _if;
-            if (lex_str == "while") return _while;
-            if (lex_str == "print") return _print;
-            if (lex_str == "choose") return _choose;
-            cerr << "q: " << lex_str << endl;
+        if (lex_str == "if") {
+            if (text[pos] == '(') return _if;
             throw InvalidExpr();  // Undefined function call
         }
+        if (lex_str == "while") {
+            if (text[pos] == '(') return _while;
+            throw InvalidExpr();  // Undefined function call
+        }
+        if (lex_str == "choose") {
+            if (text[pos] == '(') return _choose;
+            throw InvalidExpr();  // Undefined function call
+        }
+        if (lex_str == "print") {
+            if (text[pos] == '(') return _print;
+            throw InvalidExpr();  // Undefined function call
+        }
+
         // If assign operator, return assign token.
         // Variable name to be set is in lex_str.
         if (text[pos] == '=') {
