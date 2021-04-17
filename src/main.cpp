@@ -74,19 +74,31 @@ int lex_tok(const char *text) {
 
         // If predefined definition-function, return type.
         if (lex_str == "if") {
-            if (text[pos] == '(') return _if;
+            if (text[pos] == '(') {
+                pos++;
+                return _if;
+            }
             throw InvalidExpr();  // Undefined function call
         }
         if (lex_str == "while") {
-            if (text[pos] == '(') return _while;
+            if (text[pos] == '(') {
+                pos++;
+                return _while;
+            }
             throw InvalidExpr();  // Undefined function call
         }
         if (lex_str == "choose") {
-            if (text[pos] == '(') return _choose;
+            if (text[pos] == '(') {
+                pos++;
+                return _choose;
+            }
             throw InvalidExpr();  // Undefined function call
         }
         if (lex_str == "print") {
-            if (text[pos] == '(') return _print;
+            if (text[pos] == '(') {
+                pos++;
+                return _print;
+            }
             throw InvalidExpr();  // Undefined function call
         }
 
@@ -138,8 +150,6 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
         case _choose:
             top = new FuncExpr("choose", parseArgs(text, 4));
             break;
-        /*case asg:
-            return new AsgExpr(cur_str, parseExpr(text, endExpr));*/
         default:
             cerr << "1: " << fi_tok << endl;
             throw InvalidExpr();  // Invalid Expression
