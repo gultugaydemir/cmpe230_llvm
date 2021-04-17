@@ -9,7 +9,7 @@
 #include "../include/generator.h"
 using namespace std;
 
-int linenum = 0;
+int linenum = 1;
 
 struct InvalidExpr : public exception {
     const char *what() const throw() { return "Invalid Expression: "; }
@@ -135,8 +135,7 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
     int fi_tok = lex_tok(text), se_tok, last_prec, cur_prec = INT_MAX;
     cerr << fi_tok << endl;
     string cur_str = lex_str, next_str;
-    Expr *top, *cur, *part, *temp;
-    cur = new NumExpr("0");
+    Expr *top, *cur = NULL, *part;
     switch (fi_tok) {
         case '(':
             top = parseExpr(text, paran);
@@ -170,8 +169,7 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
         cur_prec = oprPrec[se_tok];
         if (cur_prec < last_prec) {
             cerr << "low\n";
-            // cur->debug();
-            cur->setRight(part);
+            if (cur != NULL) cur->setRight(part);
             top = new OprExpr(se_tok, top);
             cur = top;
         } else if (cur_prec == last_prec) {
@@ -179,7 +177,7 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
             cur->pushLeft(se_tok, part);
         } else {
             cerr << "high\n";
-            temp = new OprExpr(se_tok, part);
+            Expr *temp = new OprExpr(se_tok, part);
             cur->setRight(temp);
             cur = temp;
         }
@@ -264,11 +262,13 @@ void runWhile(Expr *tgt, string &text, Generator &gen) {
                 cerr << "Hello\n";
                 // exprPtr->debug();
                 gen.add_code(exprPtr->codeGen());
+                delete exprPtr;
                 break;
             case _print:
                 exprPtr = parseArgs(text.c_str(), 1)[0];
                 gen.add_code(exprPtr->codeGen());
                 gen.add_code(generatePrint(exprPtr));
+                delete exprPtr;
                 break;
             case '\n':
                 break;
@@ -316,11 +316,13 @@ void runIf(Expr *tgt, string &text, Generator &gen) {
                 cerr << "Hello\n";
                 // exprPtr->debug();
                 gen.add_code(exprPtr->codeGen());
+                delete exprPtr;
                 break;
             case _print:
                 exprPtr = parseArgs(text.c_str(), 1)[0];
                 gen.add_code(exprPtr->codeGen());
                 gen.add_code(generatePrint(exprPtr));
+                delete exprPtr;
                 break;
             case '\n':
                 break;
@@ -367,11 +369,13 @@ int main(int argc, char *argv[]) {
                     cerr << "Hello\n";
                     // exprPtr->debug();
                     gen.add_code(exprPtr->codeGen());
+                    delete exprPtr;
                     break;
                 case _print:
                     exprPtr = parseArgs(text.c_str(), 1)[0];
                     gen.add_code(exprPtr->codeGen());
                     gen.add_code(generatePrint(exprPtr));
+                    delete exprPtr;
                     break;
                 case _while:
                     exprPtr = parseArgs(text.c_str(), 1)[0];
@@ -385,6 +389,7 @@ int main(int argc, char *argv[]) {
                     }
                     cerr << "success";
                     runWhile(exprPtr, text, gen);
+                    delete exprPtr;
                     break;
 
                 case _if:
@@ -399,6 +404,7 @@ int main(int argc, char *argv[]) {
                     }
                     cerr << "success";
                     runIf(exprPtr, text, gen);
+                    delete exprPtr;
                     break;
 
                 case '\n':
@@ -423,10 +429,13 @@ int main(int argc, char *argv[]) {
     } catch (const exception &e) {
         // Write the type of exception, then description.
         // Must be updated before submitting the assignment.
+        /*
         exception_ptr p = make_exception_ptr(e);
         cerr << (p ? p.__cxa_exception_type()->name() : "null") << endl
              << e.what() << endl;
         cerr << "Line Number: " << linenum << endl;
+        */
+        cerr << "Line " << linenum << ": syntax error" << endl;
     }
 
     return 0;

@@ -15,88 +15,75 @@ map<string, unsigned int> VarExpr::varMap;
 Expr::Expr() : tempName("%tmp" + to_string(tempIdNum++)) {}
 Expr::Expr(string tempName) : tempName(tempName) {}
 string Expr::tempNameGet() const { return tempName; }
+string Expr::tempNameRequest() { return "%tmp" + to_string(tempIdNum++); }
 
-VarExpr::VarExpr(string name) : name(name) {
+VarExpr::VarExpr(string name) : name(name) { constructor(); }
+VarExpr::VarExpr(string name, void *reserved) : Expr(""), name(name) {
     constructor();
 }
+void VarExpr::constructor() {
+    map<string, unsigned int>::iterator it = varMap.lower_bound(name);
+    if (it == varMap.end() || name != it->first) {
+        varMap.insert(it, {name, varIdNum++});
+    }
+    varName = "%var" + to_string(varMap[name]);
+}
+vector<string> VarExpr::getVarList() {
+    vector<string> res;
+    map<string, unsigned int>::iterator it;
+    for (it = varMap.begin(); it != varMap.end(); it++) {
+        res.push_back("%var" + to_string(it->second));
+    }
+    return res;
+}
 
-/*
-class Expr {
-   private:
-    static unsigned int tempIdNum;
-    string tempName;
-
-   public:
-    Expr() : tempName("%tmp" + to_string(tempIdNum++)) {}
-    Expr(string tempName) : tempName(tempName) {}
-    string tempNameGet() const { return tempName; }
-    virtual void setRight(Expr *ri) {}
-    virtual string codeGen() = 0;
-    virtual ~Expr(){}
-};
-
-class NumExpr : public Expr {
-   public:
-    NumExpr(string value) : Expr(value) {}
-    virtual string codeGen() { return ""; }
-};
-
-class VarExpr : public Expr {
-   private:
-    static unsigned int varIdNum;
-    static map<string, unsigned int> varMap;
-    string name;
-    string varName;
-
-   public:
-    static vector<string> getVarList() {
-        vector<string>res;
-        map<string, unsigned int>::iterator it;
-        for(it=varMap.begin(); it!= varMap.end(); it++){
-            res.push_back("%var" + to_string(it->second));
+FuncExpr::FuncExpr(string funcname, vector<Expr *> args)
+    : args(args), funcname(funcname) {}
+string FuncExpr::codeGen() {
+    string str_args = "", pre_code = "";
+    for (int i = 0; i < args.size(); i++) {
+        str_args += "i32 " + args[i]->tempNameGet();
+        pre_code += args[i]->codeGen();
+        if ((i + 1) < args.size()) {
+            str_args += ", ";
         }
-        return res;
     }
-    VarExpr(string name) : name(name) {
-        map<string, unsigned int>::iterator it = varMap.lower_bound(name);
-        if (it == varMap.end() || name != it->first) {
-            varMap.insert(it, {name, varIdNum++});
-        }
-        varName = "%var" + to_string(varMap[name]);
-    }
-    string varNameGet() const { return varName; }
-    virtual string codeGen() {
-        return tempNameGet() + " = load i32* " + varName + '\n';
-    }
-};
+    return pre_code + tempNameGet() + " = call i32 @" + funcname + '(' +
+           str_args + ")\n";
+}
 
-class OprExpr : public Expr {
-   private:
-    char op;
-    Expr *le, *ri;
+string VarExpr::varNameGet() const { return varName; }
+string VarExpr::codeGen() {
+    return tempNameGet() + " = load i32* " + varName + '\n';
+}
 
-   public:
-    OprExpr(char op, Expr *le, Expr *ri) : op(op), le(le), ri(ri) {}
-    OprExpr(char op, Expr *le) : op(op), le(le) {}
-    virtual void setRight(Expr *ri) { this->ri = ri; }
-    virtual string codeGen() {
-        string left, right;
-        left = le->codeGen();
-        right = ri->codeGen();
-        return left + right + tempNameGet() + " = " + oprName[op] + " i32 " +
-               le->tempNameGet() + ", " + ri->tempNameGet() + '\n';
-    }
-};
+AsgExpr::AsgExpr(string name, Expr *assignee)
+    : VarExpr(name, NULL), assignee(assignee) {}
+string AsgExpr::codeGen() {
+    return assignee->codeGen() + "store i32 " + assignee->tempNameGet() +
+           ", i32* " + varNameGet() + '\n';
+}
+AsgExpr::~AsgExpr() {
+    delete assignee;
+}
 
-class AsgExpr : public VarExpr {
-   private:
-    Expr *assignee;
-
-   public:
-    AsgExpr(string name, Expr *assignee) : VarExpr(name), assignee(assignee) {}
-    virtual string codeGen() {
-        return assignee->codeGen() + "store i32 " + assignee->tempNameGet() +
-               ", i32* " + tempNameGet() + '\n';
-    }
-};
-*/
+OprExpr::OprExpr(char op, Expr *le, Expr *ri) : op(op), le(le), ri(ri) {}
+OprExpr::OprExpr(char op, Expr *le) : op(op), le(le) {}
+void OprExpr::setRight(Expr *ri) { this->ri = ri; }
+void OprExpr::pushLeft(char op, Expr *var) {
+    OprExpr *temp = new OprExpr(this->op, this->le, this->ri);
+    temp->ri = var;
+    this->le = temp;
+    this->op = op;
+}
+string OprExpr::codeGen() {
+    string left, right;
+    left = le->codeGen();
+    right = ri->codeGen();
+    return left + right + tempNameGet() + " = " + oprName[op] + " i32 " +
+           le->tempNameGet() + ", " + ri->tempNameGet() + '\n';
+}
+OprExpr::~OprExpr() {
+    delete le;
+    delete ri;
+}
