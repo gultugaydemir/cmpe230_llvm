@@ -3,6 +3,7 @@
 #include <fstream>
 using namespace std;
 
+// Taking the files with .my extension as the input
 FileIO::FileIO(const char* rawName) {
     inFile = string(rawName);
     if (this->inFile.substr(this->inFile.find_last_of('.')) != ".my")

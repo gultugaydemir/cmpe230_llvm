@@ -7,6 +7,7 @@ using namespace std;
 // Code generator class
 class Generator {
    private:
+   
     const string beg_code =
         "; ModuleID = 'mylang2ir'\n"
         "declare i32 @printf(i8*, ...)\n"

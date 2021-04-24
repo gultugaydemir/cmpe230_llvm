@@ -4,6 +4,7 @@
 #include <string>
 using namespace std;
 
+// Handles invalid extensions for the input
 struct InvalidExt : public exception {
     const char* what() const throw() {
         return "Invalid File Extension";
