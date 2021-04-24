@@ -9,7 +9,7 @@
 #include "../include/generator.h"
 using namespace std;
 
-int linenum = 1;
+int linenum = 0;
 
 struct InvalidExpr : public exception {
     const char *what() const throw() { return "Invalid Expression: "; }
