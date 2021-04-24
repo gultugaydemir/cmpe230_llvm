@@ -7,9 +7,9 @@
 
 - Refactor code
 
-- Test code
+- ~~Test code ~~
 
-- Comment code
+- ~~Comment code ~~
 
-- Write report
+- ~~Write report ~~
 
