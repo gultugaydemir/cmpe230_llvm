@@ -1,5 +1,4 @@
 #include "../include/generator.h"
-
 #include <iostream>
 using namespace std;
 

@@ -12,22 +12,27 @@ unsigned int Expr::tempIdNum = 1;
 unsigned int VarExpr::varIdNum = 1;
 map<string, unsigned int> VarExpr::varMap;
 
+
 Expr::Expr() : tempName("%tmp" + to_string(tempIdNum++)) {}
 Expr::Expr(string tempName) : tempName(tempName) {}
 string Expr::tempNameGet() const { return tempName; }
 string Expr::tempNameRequest() { return "%tmp" + to_string(tempIdNum++); }
 
+
+// Generrate the LLVM IR Code for the variables
 VarExpr::VarExpr(string name) : name(name) { constructor(); }
 VarExpr::VarExpr(string name, void *reserved) : Expr(""), name(name) {
     constructor();
 }
+
 void VarExpr::constructor() {
     map<string, unsigned int>::iterator it = varMap.lower_bound(name);
     if (it == varMap.end() || name != it->first) {
         varMap.insert(it, {name, varIdNum++});
-    }
+    }   
     varName = "%var" + to_string(varMap[name]);
 }
+
 vector<string> VarExpr::getVarList() {
     vector<string> res;
     map<string, unsigned int>::iterator it;
@@ -37,6 +42,7 @@ vector<string> VarExpr::getVarList() {
     return res;
 }
 
+// Generrate the LLVM IR Code for the choose functions
 FuncExpr::FuncExpr(string funcname, vector<Expr *> args)
     : args(args), funcname(funcname) {}
 string FuncExpr::codeGen() {
@@ -57,6 +63,7 @@ string VarExpr::codeGen() {
     return tempNameGet() + " = load i32* " + varName + '\n';
 }
 
+// Generrate the LLVM IR Code for the assignment expressions
 AsgExpr::AsgExpr(string name, Expr *assignee)
     : VarExpr(name, NULL), assignee(assignee) {}
 string AsgExpr::codeGen() {
@@ -67,6 +74,7 @@ AsgExpr::~AsgExpr() {
     delete assignee;
 }
 
+// Generrate the LLVM IR Code for the operator expressions
 OprExpr::OprExpr(char op, Expr *le, Expr *ri) : op(op), le(le), ri(ri) {}
 OprExpr::OprExpr(char op, Expr *le) : op(op), le(le) {}
 void OprExpr::setRight(Expr *ri) { this->ri = ri; }

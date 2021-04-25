@@ -3,10 +3,16 @@
 #include <fstream>
 using namespace std;
 
+// Taking the files with .my extension as the input
 FileIO::FileIO(const char* rawName) {
     inFile = string(rawName);
-    if (this->inFile.substr(this->inFile.find_last_of('.')) != ".my")
+    try{
+        if (this->inFile.substr(this->inFile.find_last_of('.')) != ".my")
+            throw InvalidExt();
+    } catch (const exception &e) {
+        // Throw error for find_last_of
         throw InvalidExt();
+    }
     this->outFile =
         this->inFile.substr(0, this->inFile.find_last_of('.')) +
         ".ll";

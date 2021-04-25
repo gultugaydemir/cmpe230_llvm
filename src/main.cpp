@@ -9,60 +9,71 @@
 #include "../include/generator.h"
 using namespace std;
 
-int linenum = 1;
+int linenum = 0;
 
 struct InvalidExpr : public exception {
     const char *what() const throw() { return "Invalid Expression: "; }
 };
 
-enum block_type {
+// Used for assigning tokens for specific inputs
+enum block_type { 
     num = -1,
     var = -2,
     _while = -3,
     _if = -4,
     _choose = -5,
     _print = -6,
-    asg = -7,
-    eof = -8
+    asg = -7,      
+    eof = -8        
 };
 
 string lex_str;
 int pos = 0;
 
+
+/*  @desc Reads the input and returns the assigned token for each element
+    @parameter text - The input of file.my
+    @return Return the token of the input from block_type.
+            Otherwise return end line or throw invalid expression exception.
+*/
 int lex_tok(const char *text) {
     lex_str = "";
 
-    if (text[pos] == '\0') {
+    // Reached the end of the file.
+    if (text[pos] == '\0') {  
         return eof;
     }
 
+    // Skips the whitespaces or jumps to the next line.
     while (isspace(text[pos]) && text[pos] != '\n') pos++;
 
-    // cerr << "pos: " << pos << endl;
+    // Reached the end of the file.
     if (text[pos] == '\0') {
         return eof;
     }
 
+    // Skips the characters after # until the end of the line.
     if (text[pos] == '#' || text[pos] == '\n') {
-        // cerr << "char: " << text[pos] << endl;
         while (text[pos] != '\n' && text[pos] != '\0') pos++;
         if (text[pos] == '\0') {
             return eof;
         }
 
         pos++;
-        // cerr << "ret: " << 1 << endl;
         return '\n';
     }
 
+    // Stores the numeric value by concatenating the consecutive digits in lex_str
     if (isdigit(text[pos])) {
         do {
             lex_str += text[pos++];
         } while (isdigit(text[pos]));
-        // cerr << "ret: " << 2 << endl;
         return num;
     }
+
+    // Checks the non-numeric characters
     if (isalpha(text[pos])) {
+        // Store variable name in lex_str if the consecutive characters are alphanumeric
         do {
             lex_str += text[pos++];
         } while (isalnum(text[pos]));
@@ -72,7 +83,7 @@ int lex_tok(const char *text) {
         while (isspace(text[pos]) && text[pos] != '\n' && text[pos] != '\0')
             pos++;
 
-        // If predefined definition-function, return type.
+        // If predefined definition-function, return their tokens accordingly.
         if (lex_str == "if") {
             if (text[pos] == '(') {
                 pos++;
@@ -102,22 +113,20 @@ int lex_tok(const char *text) {
             throw InvalidExpr();  // Undefined function call
         }
 
-        // If assign operator, return assign token.
+        // If assign operator, returns assign token.
         // Variable name to be set is in lex_str.
         if (text[pos] == '=') {
             pos++;
-            // cerr << "ret: " << 3 << endl;
             return asg;
         }
 
-        // cerr << "ret: " << 4 << endl;
         return var;
     }
 
-    // cerr << "ret: " << 5 << endl;
     return text[pos++];
 }
 
+//Operators with their precedence values
 map<char, int> oprPrec = {
     {'+', 1},
     {'-', 1},
@@ -129,62 +138,70 @@ enum endChar { newline = '\n', paran = ')', comma = ',' };
 
 vector<Expr *> parseArgs(const char *text, int argNum);
 
+
+/*  @desc parseExpr - Parses and reads the token throughout the input text, until the endExpr.
+    @parameter text to be parsed, endExpr to detect until when.
+    @return the AST nodes according to the input or throws invalid exception.
+*/
 Expr *parseExpr(const char *text, endChar endExpr = newline) {
     // The first part should always be on leaves.
-    cerr << "Im here\n";
     int fi_tok = lex_tok(text), se_tok, last_prec, cur_prec = INT_MAX;
-    cerr << fi_tok << endl;
     string cur_str = lex_str, next_str;
     Expr *top, *cur = NULL, *part;
+
+    // Detecting the token of the character
     switch (fi_tok) {
+        // If encountered with "(", parses until the neares ")".
         case '(':
             top = parseExpr(text, paran);
             break;
+        // If encountered with a variable, calls its expression function.
         case var:
             top = new VarExpr(cur_str);
             break;
+        // If encountered with a numeric expression, calls its expression function.
         case num:
             top = new NumExpr(cur_str);
             break;
+        // If encountered with a "choose" function, parses and reads the next 4 expression.
         case _choose:
             top = new FuncExpr("choose", parseArgs(text, 4));
             break;
+        // Invalid Expression
         default:
-            cerr << "1: " << fi_tok << endl;
-            throw InvalidExpr();  // Invalid Expression
+            throw InvalidExpr();  
     }
-    cerr << "cur_str_beg: " << cur_str << endl;
     se_tok = lex_tok(text);
-    cerr << se_tok << endl;
+
+    // If the expression doesn't contain any operator, return its token.
     if (oprPrec.find(se_tok) == oprPrec.end()) {
         if ((se_tok == endExpr) || (endExpr == newline && se_tok == eof)) {
             return top;
         }
-        cerr << "3-1: " << (char)fi_tok << endl;
         throw InvalidExpr();
     }
+
+    // If the expression contains an operator, perform the operation.
     while (oprPrec.find(se_tok) != oprPrec.end()) {
-        cerr << oprPrec.find(se_tok)->first;
-        last_prec = cur_prec;
+        last_prec = cur_prec; // precedence identifier
         cur_prec = oprPrec[se_tok];
-        if (cur_prec < last_prec) {
-            cerr << "low\n";
+
+        // Arranging the precedence of the operations
+        if (cur_prec < last_prec){   // low
             if (cur != NULL) cur->setRight(part);
             top = new OprExpr(se_tok, top);
             cur = top;
-        } else if (cur_prec == last_prec) {
-            cerr << "medium\n";
+        } else if (cur_prec == last_prec) { // medium
             cur->pushLeft(se_tok, part);
-        } else {
-            cerr << "high\n";
+        } else { // high
             Expr *temp = new OprExpr(se_tok, part);
             cur->setRight(temp);
             cur = temp;
         }
+
         fi_tok = lex_tok(text);
         cur_str = lex_str;
-        cerr << "cur_str: " << cur_str << endl;
-        cerr << "fi_tok: " << fi_tok << endl;
+
         switch (fi_tok) {
             case '(':
                 part = parseExpr(text, paran);
@@ -199,20 +216,19 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
                 part = new FuncExpr("choose", parseArgs(text, 4));
                 break;
             default:
-                cerr << "2: " << fi_tok << endl;
                 throw InvalidExpr();  // Invalid Expression
         }
         se_tok = lex_tok(text);
-        cerr << "se_tok: " << se_tok << endl;
     }
+
     cur->setRight(part);
     if (se_tok == endExpr || (endExpr == newline && se_tok == eof)) {
         return top;
     }
-    cerr << "3: " << (char)fi_tok << endl;
     throw InvalidExpr();
 }
 
+// @return parses according to the given argNum
 vector<Expr *> parseArgs(const char *text, int argNum) {
     vector<Expr *> res;
     while (argNum > 1) {
@@ -220,10 +236,10 @@ vector<Expr *> parseArgs(const char *text, int argNum) {
         argNum--;
     }
     if (argNum == 1) res.push_back(parseExpr(text, paran));
-    cerr << "Returning\n" << res.size() << " " << pos << endl;
     return res;
 }
 
+// @return Generates IR code for print function.
 string generatePrint(Expr *tgt) {
     return "call i32 (i8*, ...)* @printf(i8* getelementptr ([4 x i8]* "
            "@print.str, i32 0, i32 0), i32 " +
@@ -233,7 +249,9 @@ string generatePrint(Expr *tgt) {
 int whileNum = 1;
 int ifNum = 1;
 
+// @return Parsing through the while function and generating its LLVM IR code 
 void runWhile(Expr *tgt, string &text, Generator &gen) {
+    
     string whileName[] = {"whcond" + to_string(whileNum),
                           "whbody" + to_string(whileNum),
                           "whend" + to_string(whileNum)};
@@ -247,20 +265,14 @@ void runWhile(Expr *tgt, string &text, Generator &gen) {
     gen.add_code(cmpTemp + " = icmp ne i32 " + tgt->tempNameGet() +
                  ", 0\nbr i1 " + cmpTemp + ", label %" + whileName[1] +
                  ", label %" + whileName[2] + '\n' + whileName[1] + ":\n");
-    cerr << "While parsed";
     linenum++;
     int tok = lex_tok(text.c_str());
     string cur_str = lex_str;
     Expr *exprPtr;
     while (tok != '}') {
-        // cerr << "tok: " << tok << endl;
-        cerr << "str: " << text[pos] << text[pos + 1] << text[pos + 2] << endl;
         switch (tok) {
             case asg:
                 exprPtr = new AsgExpr(cur_str, parseExpr(text.c_str()));
-                cerr << "pos: " << pos << endl;
-                cerr << "Hello\n";
-                // exprPtr->debug();
                 gen.add_code(exprPtr->codeGen());
                 delete exprPtr;
                 break;
@@ -273,10 +285,8 @@ void runWhile(Expr *tgt, string &text, Generator &gen) {
             case '\n':
                 break;
             default:
-                cerr << "def: " << tok << endl;
                 throw InvalidExpr();  // Invalid Expression
         }
-        cerr << "ok-while: " << linenum << ": " << tok << ": " << pos << endl;
         tok = lex_tok(text.c_str());
         if (tok == eof) {
             throw InvalidExpr();  // Invalid Expression
@@ -288,6 +298,8 @@ void runWhile(Expr *tgt, string &text, Generator &gen) {
     gen.add_code("br label %" + whileName[0] + '\n' + whileName[2] + ":\n");
 }
 
+
+// @return Parsing through the if function and generating its LLVM IR code
 void runIf(Expr *tgt, string &text, Generator &gen) {
     string ifName[] = {"ifcond" + to_string(ifNum), "ifbody" + to_string(ifNum),
                        "ifend" + to_string(ifNum)};
@@ -301,20 +313,14 @@ void runIf(Expr *tgt, string &text, Generator &gen) {
     gen.add_code(cmpTemp + " = icmp ne i32 " + tgt->tempNameGet() +
                  ", 0\nbr i1 " + cmpTemp + ", label %" + ifName[1] +
                  ", label %" + ifName[2] + '\n' + ifName[1] + ":\n");
-    cerr << "If parsed";
     linenum++;
     int tok = lex_tok(text.c_str());
     string cur_str = lex_str;
     Expr *exprPtr;
     while (tok != '}') {
-        // cerr << "tok: " << tok << endl;
-        cerr << "str: " << text[pos] << text[pos + 1] << text[pos + 2] << endl;
         switch (tok) {
             case asg:
                 exprPtr = new AsgExpr(cur_str, parseExpr(text.c_str()));
-                cerr << "pos: " << pos << endl;
-                cerr << "Hello\n";
-                // exprPtr->debug();
                 gen.add_code(exprPtr->codeGen());
                 delete exprPtr;
                 break;
@@ -327,10 +333,8 @@ void runIf(Expr *tgt, string &text, Generator &gen) {
             case '\n':
                 break;
             default:
-                cerr << "def: " << tok << endl;
                 throw InvalidExpr();  // Invalid Expression
         }
-        cerr << "ok-if: " << linenum << ": " << tok << ": " << pos << endl;
         tok = lex_tok(text.c_str());
         if (tok == eof) {
             throw InvalidExpr();  // Invalid Expression
@@ -345,7 +349,7 @@ void runIf(Expr *tgt, string &text, Generator &gen) {
 int main(int argc, char *argv[]) {
     ios::sync_with_stdio(false);
 
-    if (argc < 2) {
+    if (argc != 2) {
         cerr << "Please enter a filename!\n";
         return 0;
     }
@@ -358,16 +362,12 @@ int main(int argc, char *argv[]) {
         int tok = lex_tok(text.c_str());
         string cur_str = lex_str;
         Expr *exprPtr;
+
+        // Reads through the token reaches the end of the file        
         while (tok != eof) {
-            // cerr << "tok: " << tok << endl;
-            cerr << "str: " << text[pos] << text[pos + 1] << text[pos + 2]
-                 << endl;
             switch (tok) {
                 case asg:
                     exprPtr = new AsgExpr(cur_str, parseExpr(text.c_str()));
-                    cerr << "pos: " << pos << endl;
-                    cerr << "Hello\n";
-                    // exprPtr->debug();
                     gen.add_code(exprPtr->codeGen());
                     delete exprPtr;
                     break;
@@ -380,14 +380,11 @@ int main(int argc, char *argv[]) {
                 case _while:
                     exprPtr = parseArgs(text.c_str(), 1)[0];
                     if (lex_tok(text.c_str()) != '{') {
-                        cerr << '{';
                         throw InvalidExpr();  // Invalid Expression
                     }
                     if (lex_tok(text.c_str()) != '\n') {
-                        cerr << 'n';
                         throw InvalidExpr();  // Invalid Expression
                     }
-                    cerr << "success";
                     runWhile(exprPtr, text, gen);
                     delete exprPtr;
                     break;
@@ -395,14 +392,11 @@ int main(int argc, char *argv[]) {
                 case _if:
                     exprPtr = parseArgs(text.c_str(), 1)[0];
                     if (lex_tok(text.c_str()) != '{') {
-                        cerr << '{';
                         throw InvalidExpr();  // Invalid Expression
                     }
                     if (lex_tok(text.c_str()) != '\n') {
-                        cerr << 'n';
                         throw InvalidExpr();  // Invalid Expression
                     }
-                    cerr << "success";
                     runIf(exprPtr, text, gen);
                     delete exprPtr;
                     break;
@@ -410,31 +404,22 @@ int main(int argc, char *argv[]) {
                 case '\n':
                     break;
                 default:
-                    cerr << "def: " << tok << endl;
                     throw InvalidExpr();  // Invalid Expression
             }
-            cerr << "ok: " << linenum << ": " << tok << ": " << pos << endl;
             tok = lex_tok(text.c_str());
             cur_str = lex_str;
             linenum++;
         }
-        cerr << "ok" << endl;
         for (auto it : VarExpr::getVarList()) {
             gen.add_init(it);
         }
-        cerr << "ok" << endl;
         io.writeFile(gen.get_code());
-        cerr << "done" << endl;
 
+    } catch (const InvalidExt &e) {
+        // Throw error for invalid filenames
+        cerr << e.what() << endl;
     } catch (const exception &e) {
-        // Write the type of exception, then description.
-        // Must be updated before submitting the assignment.
-        /*
-        exception_ptr p = make_exception_ptr(e);
-        cerr << (p ? p.__cxa_exception_type()->name() : "null") << endl
-             << e.what() << endl;
-        cerr << "Line Number: " << linenum << endl;
-        */
+        // Throw error with line number
         cerr << "Line " << linenum << ": syntax error" << endl;
     }
 
