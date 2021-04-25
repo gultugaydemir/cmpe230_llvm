@@ -15,7 +15,7 @@ class Generator {
 
     const string choose_func =
         "define i32 @choose(i32 %e1, i32 %e2, i32 %e3, i32 %e4){\n"
-        "%dt1 = icmp ult i32 0, %e1\n"
+        "%dt1 = icmp slt i32 0, %e1\n"
         "br i1 %dt1, label %ret_e2, label %cmp\n"
         "cmp:\n"
         "%dt2=icmp eq i32 0, %e1\n"

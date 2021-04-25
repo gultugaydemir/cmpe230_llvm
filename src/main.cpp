@@ -313,7 +313,6 @@ void runIf(Expr *tgt, string &text, Generator &gen) {
     gen.add_code(cmpTemp + " = icmp ne i32 " + tgt->tempNameGet() +
                  ", 0\nbr i1 " + cmpTemp + ", label %" + ifName[1] +
                  ", label %" + ifName[2] + '\n' + ifName[1] + ":\n");
-    cerr << "If parsed";
     linenum++;
     int tok = lex_tok(text.c_str());
     string cur_str = lex_str;
@@ -336,7 +335,6 @@ void runIf(Expr *tgt, string &text, Generator &gen) {
             default:
                 throw InvalidExpr();  // Invalid Expression
         }
-        cerr << "ok-if: " << linenum << ": " << tok << ": " << pos << endl;
         tok = lex_tok(text.c_str());
         if (tok == eof) {
             throw InvalidExpr();  // Invalid Expression
@@ -370,7 +368,6 @@ int main(int argc, char *argv[]) {
             switch (tok) {
                 case asg:
                     exprPtr = new AsgExpr(cur_str, parseExpr(text.c_str()));
-                    cerr << "pos: " << pos << endl;
                     gen.add_code(exprPtr->codeGen());
                     delete exprPtr;
                     break;
@@ -388,7 +385,6 @@ int main(int argc, char *argv[]) {
                     if (lex_tok(text.c_str()) != '\n') {
                         throw InvalidExpr();  // Invalid Expression
                     }
-                    cerr << "success";
                     runWhile(exprPtr, text, gen);
                     delete exprPtr;
                     break;
@@ -401,7 +397,6 @@ int main(int argc, char *argv[]) {
                     if (lex_tok(text.c_str()) != '\n') {
                         throw InvalidExpr();  // Invalid Expression
                     }
-                    cerr << "success";
                     runIf(exprPtr, text, gen);
                     delete exprPtr;
                     break;
@@ -420,15 +415,11 @@ int main(int argc, char *argv[]) {
         }
         io.writeFile(gen.get_code());
 
+    } catch (const InvalidExt &e) {
+        // Throw error for invalid filenames
+        cerr << e.what() << endl;
     } catch (const exception &e) {
-        // Write the type of exception, then description.
-        // Must be updated before submitting the assignment.
-        /*
-        exception_ptr p = make_exception_ptr(e);
-        cerr << (p ? p.__cxa_exception_type()->name() : "null") << endl
-             << e.what() << endl;
-        cerr << "Line Number: " << linenum << endl;
-        */
+        // Throw error with line number
         cerr << "Line " << linenum << ": syntax error" << endl;
     }
 

@@ -13,6 +13,9 @@
 
 -Variable isimlerinde _ bulunduğu için ve 1/0 bölünmesinde hata veren testler var, grading'de bu koşullar gözardı edilecekmiş. bundan ötürü çalışmayan testleri tespit edip güncelleyeceğim
 
+-Fixed possible error for choose function. Now, testcase 4 works.
+-Removed more cerr, updated exception for fileio. (Eger dosya ismi .my ile bitmiyorsa syntax error vermesin istedim, çok önemli değil ama sanırım.)
+
 - ~~Comment code~~
 
 - ~~Write report~~
