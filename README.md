@@ -8,13 +8,8 @@
 - Refactor code
 
 - ~~Test code~~   
-    - Works: 1-2-3-4-5-10-12-13-14-15-17-18
-    - Needs check: 6-7-8-9-11-16(1/0 division)
-
--Variable isimlerinde _ bulunduğu için ve 1/0 bölünmesinde hata veren testler var, grading'de bu koşullar gözardı edilecekmiş. bundan ötürü çalışmayan testleri tespit edip güncelleyeceğim
-
--Fixed possible error for choose function. Now, testcase 4 works.
--Removed more cerr, updated exception for fileio. (Eger dosya ismi .my ile bitmiyorsa syntax error vermesin istedim, çok önemli değil ama sanırım.)
+    - passed all the test cases
+    - Needs check: 12-13-14-15-16-17-18 (Syntax errors are being received after "mylang2ir file.my" command. It should be given after "lli file.my" command instead.)
 
 - ~~Comment code~~
 
