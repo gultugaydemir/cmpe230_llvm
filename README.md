@@ -9,7 +9,7 @@
 
 - ~~Test code~~   
     - Passed all the test cases
-    - Generated IR codes that prints the syntax errors
+    - Generated IR codes that prints the syntax errors (review branch)
 
 - ~~Comment code~~
 
