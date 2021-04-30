@@ -13,6 +13,11 @@ class Generator {
         "declare i32 @printf(i8*, ...)\n"
         "@print.str = constant [4 x i8] c\"%d\\0A\\00\"\n\n";
 
+    const string err_beg_code =
+        "; ModuleID = 'mylang2ir'\n"
+        "declare i32 @printf(i8*, ...)\n"
+        "@print.str = constant [23 x i8] c\"Line %d: syntax error\\0A\\00\"\n\n";
+
     const string choose_func =
         "define i32 @choose(i32 %e1, i32 %e2, i32 %e3, i32 %e4){\n"
         "%dt1 = icmp slt i32 0, %e1\n"
@@ -40,6 +45,7 @@ class Generator {
    public:
     Generator();
     string get_code();
+    string get_errcode();
     void add_init(string args);
     void add_code(string text);
 };

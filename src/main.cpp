@@ -246,6 +246,13 @@ string generatePrint(Expr *tgt) {
            tgt->tempNameGet() + " )\n";
 }
 
+string generateErrorPrint(int linenum) {
+    return "call i32 (i8*, ...)* @printf(i8* getelementptr ([23 x i8]* "
+           "@print.str, i32 0, i32 0), i32 " +
+           std::to_string(linenum) + " )\n";
+}
+
+
 int whileNum = 1;
 int ifNum = 1;
 
@@ -419,9 +426,13 @@ int main(int argc, char *argv[]) {
         // Throw error for invalid filenames
         cerr << e.what() << endl;
     } catch (const exception &e) {
-        // Throw error with line number
+        // Creates the LLVM script that prints the error
+        FileIO io(argv[1]);
+        Generator gen = Generator();  
+        gen.add_code(generateErrorPrint(linenum));
+        io.writeFile(gen.get_errcode());
         cerr << "Line " << linenum << ": syntax error" << endl;
-    }
+        }
 
     return 0;
 }
