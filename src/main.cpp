@@ -442,7 +442,6 @@ int main(int argc, char *argv[]) {
         Generator gen = Generator();  
         gen.add_code(generateErrorPrint(linenum));
         io.writeFile(gen.get_errcode());
-        cerr << "Line " << linenum << ": syntax error" << endl;
         }
 
     return 0;
