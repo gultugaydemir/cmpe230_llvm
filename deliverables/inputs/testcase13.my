@@ -4,4 +4,4 @@ acoolvariable = notsocoolvariable * notsocoolvariable
 acoolervariable = 10 * acoolvariable
 
 # a variable so cool that it cannot be computed...
-toocool variable = ((0 + acoolvariable) + 5) + (acoolvariable * 10))  # Syntax error
+toocool variable = ((0 + acoolvariable) + 5) + (acoolvariable * 10))  # Syntax error 

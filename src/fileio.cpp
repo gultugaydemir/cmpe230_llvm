@@ -3,7 +3,7 @@
 #include <fstream>
 using namespace std;
 
-// Taking the files with .my extension as the input
+// Taking the files with .my extension as the input, creating the .ll file output.
 FileIO::FileIO(const char* rawName) {
     inFile = string(rawName);
     try{
