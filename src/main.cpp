@@ -228,7 +228,12 @@ Expr *parseExpr(const char *text, endChar endExpr = newline) {
     throw InvalidExpr();
 }
 
-// @return parses according to the given argNum
+/*  @desc parseExpr - Parses according to the given argNum
+    @parameter text to be parsed, argNum to detect the end of the text. 
+                If argNum == 1, parses until the next bracket.
+                If argnum > 1, parses until the next comma. i.e. choose function
+    @return the AST nodes according to the input.
+*/
 vector<Expr *> parseArgs(const char *text, int argNum) {
     vector<Expr *> res;
     while (argNum > 1) {
@@ -246,6 +251,7 @@ string generatePrint(Expr *tgt) {
            tgt->tempNameGet() + " )\n";
 }
 
+// @return Generates IR code for print function of the syntax errors.
 string generateErrorPrint(int linenum) {
     return "call i32 (i8*, ...)* @printf(i8* getelementptr ([23 x i8]* "
            "@print.str, i32 0, i32 0), i32 " +
@@ -256,7 +262,10 @@ string generateErrorPrint(int linenum) {
 int whileNum = 1;
 int ifNum = 1;
 
-// @return Parsing through the while function and generating its LLVM IR code 
+/*  @desc runWhile - Parses through the while function and generating its IR code
+    @parameter string text to be parsed, Generator gen for generating the  LLVM script.
+    @return void
+*/ 
 void runWhile(Expr *tgt, string &text, Generator &gen) {
     
     string whileName[] = {"whcond" + to_string(whileNum),
@@ -306,7 +315,10 @@ void runWhile(Expr *tgt, string &text, Generator &gen) {
 }
 
 
-// @return Parsing through the if function and generating its LLVM IR code
+/*  @desc runWhile - Parses through the if function and generating its IR code
+    @parameter string text to be parsed, Generator gen for generating the  LLVM script.
+    @return void
+*/ 
 void runIf(Expr *tgt, string &text, Generator &gen) {
     string ifName[] = {"ifcond" + to_string(ifNum), "ifbody" + to_string(ifNum),
                        "ifend" + to_string(ifNum)};
@@ -356,12 +368,12 @@ void runIf(Expr *tgt, string &text, Generator &gen) {
 int main(int argc, char *argv[]) {
     ios::sync_with_stdio(false);
 
-    if (argc != 2) {
-        cerr << "Please enter a filename!\n";
+    if (argc != 2) { // Filename missing
+        cerr << "Please enter a filename!\n"; 
         return 0;
     }
 
-    try {
+    try {   // Generates the LLVM code and writes it to the LLVM file.
         FileIO io(argv[1]);
 
         string text = io.readFile() + "\0";
@@ -422,11 +434,10 @@ int main(int argc, char *argv[]) {
         }
         io.writeFile(gen.get_code());
 
-    } catch (const InvalidExt &e) {
-        // Throw error for invalid filenames
+
+    } catch (const InvalidExt &e) { // Throw error for invalid filenames
         cerr << e.what() << endl;
-    } catch (const exception &e) {
-        // Creates the LLVM script that prints the error
+    } catch (const exception &e) {  // If catches an error, creates the LLVM script that prints it
         FileIO io(argv[1]);
         Generator gen = Generator();  
         gen.add_code(generateErrorPrint(linenum));
