@@ -1,4 +1,4 @@
-# cmpe230_llvm
+# [cmpe230_llvm](cmpe230-spring-2021-hw1.pdf)
 
 ## To-Do
 
@@ -12,7 +12,3 @@
 - ~~Comment code~~
 
 - ~~Write report~~
-
-
-
-
