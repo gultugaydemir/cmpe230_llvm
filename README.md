@@ -8,7 +8,6 @@
 - ~~Refactor code~~
 
 - ~~Test code~~   
-    - Passed all the test cases
 
 - ~~Comment code~~
 
